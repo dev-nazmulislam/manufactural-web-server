@@ -25,12 +25,67 @@ async function run() {
   try {
     await client.connect();
     const partsCollection = client.db("manufacturer-data").collection("parts");
+    const orderCollection = client.db("manufacturer-data").collection("orders");
+    const reviewCollection = client
+      .db("manufacturer-data")
+      .collection("comments");
 
     app.get("/items", async (req, res) => {
       const query = {};
       const cursor = partsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    // Load order data api
+    app.get("/orders", async (req, res) => {
+      const query = {};
+      const cursor = orderCollection.find(query);
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
+    // Insert order api
+    app.post("/orders", async (req, res) => {
+      const newOrder = req.body;
+      const query = {
+        name: newOrder.name,
+        email: newOrder.email,
+      };
+      const exists = await orderCollection.findOne(query);
+      newOrder.orderStatus = true;
+      if (exists) {
+        return res.send({ success: false });
+      } else {
+        const result = await orderCollection.insertOne(newOrder);
+        return res.send({ success: true });
+      }
+    });
+
+    // Load reviews data api
+    app.get("/reviews", async (req, res) => {
+      const query = {};
+      const page = parseInt(req.query.page);
+      const cursor = reviewCollection.find(query);
+      const reviews = await cursor
+        .skip(page * 3)
+        .limit(3)
+        .toArray();
+      res.send(reviews);
+    });
+
+    // Post review api
+    app.post("/reviews", async (req, res) => {
+      const newReview = req.body;
+      const result = await reviewCollection.insertOne(newReview);
+      res.send(result);
+    });
+
+    // Count Reviews
+    app.get("/reviewCount", async (req, res) => {
+      const count = await reviewCollection.estimatedDocumentCount();
+      res.send({ count });
     });
   } finally {
     // await client.close();
