@@ -46,6 +46,20 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/order", async (req, res) => {
+      const email = req.query.email;
+      const status = req.query.status;
+      let query;
+      if (status == "all") {
+        query = { email };
+      } else {
+        query = { email, orderStatus: status };
+      }
+      const cursor = orderCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // Insert order api
     app.post("/orders", async (req, res) => {
       const newOrder = req.body;
@@ -54,13 +68,32 @@ async function run() {
         email: newOrder.email,
       };
       const exists = await orderCollection.findOne(query);
-      newOrder.orderStatus = true;
+      newOrder.orderStatus = "Pandding";
       if (exists) {
         return res.send({ success: false });
       } else {
         const result = await orderCollection.insertOne(newOrder);
         return res.send({ success: true });
       }
+    });
+
+    // Update orders Data
+    app.put("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedOrder = req.body;
+      // console.log(updatedOrder);
+
+      const filter = { _id: id };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: updatedOrder,
+      };
+      const result = await orderCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
     });
 
     // Load reviews data api
