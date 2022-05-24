@@ -66,6 +66,7 @@ async function run() {
       const query = {
         name: newOrder.name,
         email: newOrder.email,
+        orderStatus: "Pandding",
       };
       const exists = await orderCollection.findOne(query);
       newOrder.orderStatus = "Pandding";
@@ -93,6 +94,14 @@ async function run() {
         updatedDoc,
         options
       );
+      res.send(result);
+    });
+
+    // Delete orders Data
+    app.delete("/orders/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: id };
+      const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
 
