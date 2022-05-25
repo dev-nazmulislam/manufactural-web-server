@@ -62,6 +62,39 @@ async function run() {
     //   res.send({ clientSecret: paymentIntent.client_secret });
     // });
 
+    // Get User data
+    app.get("/user", async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.send(users);
+    });
+
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
+    });
+
+    app.put("/user/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const role = req.query.role;
+      // return console.log(role);
+      const filter = { email: email };
+      if (role === "Admin") {
+        const updateDoc = {
+          $set: { role: "User" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } else {
+        const updateDoc = {
+          $set: { role: "Admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+    });
+
     // Update & insert User to database
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -79,6 +112,16 @@ async function run() {
       );
       res.send({ result, token });
     });
+
+    // Delete User
+    app.delete("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Get product
     app.get("/items", async (req, res) => {
       const query = {};
       const cursor = partsCollection.find(query);
@@ -87,7 +130,7 @@ async function run() {
     });
 
     // Load order data api
-    app.get("/orders", verifyJWT, async (req, res) => {
+    app.get("/orders", async (req, res) => {
       const query = {};
       const cursor = orderCollection.find(query);
       const result = await cursor.toArray();
