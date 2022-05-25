@@ -21,15 +21,64 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "UnAuthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     await client.connect();
     const partsCollection = client.db("manufacturer-data").collection("parts");
+    const userCollection = client.db("manufacturer-data").collection("users");
     const orderCollection = client.db("manufacturer-data").collection("orders");
+    const paymentCollection = client
+      .db("manufacturer-data")
+      .collection("payments");
     const reviewCollection = client
       .db("manufacturer-data")
       .collection("comments");
 
+    // Payment Methood
+    // app.post("/create-payment-intent", async (req, res) => {
+    //   const service = req.body;
+    //   const price = service.price;
+    //   const amount = price * 100;
+    //   const paymentIntent = await stripe.paymentIntents.create({
+    //     amount: amount,
+    //     currency: "usd",
+    //     payment_method_types: ["card"],
+    //   });
+    //   res.send({ clientSecret: paymentIntent.client_secret });
+    // });
+
+    // Update & insert User to database
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const token = jwt.sign(
+        { email: email },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "1h" }
+      );
+      res.send({ result, token });
+    });
     app.get("/items", async (req, res) => {
       const query = {};
       const cursor = partsCollection.find(query);
@@ -38,7 +87,7 @@ async function run() {
     });
 
     // Load order data api
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyJWT, async (req, res) => {
       const query = {};
       const cursor = orderCollection.find(query);
       const result = await cursor.toArray();
@@ -104,6 +153,26 @@ async function run() {
       const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
+
+    // // Update Order data for payment
+    // app.patch("/orders/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const payment = req.body;
+    //   const filter = { _id: ObjectId(id) };
+    //   const updatedDoc = {
+    //     $set: {
+    //       paid: true,
+    //       transactionId: payment.transactionId,
+    //     },
+    //   };
+
+    //   const result = await paymentCollection.insertOne(payment);
+    //   const updatedBooking = await bookingCollection.updateOne(
+    //     filter,
+    //     updatedDoc
+    //   );
+    //   res.send(updatedBooking);
+    // });
 
     // Load reviews data api
     app.get("/reviews", async (req, res) => {
