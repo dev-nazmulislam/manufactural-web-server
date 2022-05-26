@@ -71,7 +71,7 @@ async function run() {
     app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
-      const isAdmin = user.role === "Admin";
+      const isAdmin = user?.role === "Admin";
       res.send({ admin: isAdmin });
     });
 
@@ -129,6 +129,21 @@ async function run() {
       res.send(result);
     });
 
+    // Add Product
+    app.post("/items", async (req, res) => {
+      const newItems = req.body;
+      // return console.log(newItems);
+      const result = await partsCollection.insertOne(newItems);
+      res.send(result);
+    });
+
+    // Delete Product
+    app.delete("/items/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await partsCollection.deleteOne(query);
+      res.send(result);
+    });
     // Load order data api
     app.get("/orders", async (req, res) => {
       const query = {};
@@ -162,6 +177,7 @@ async function run() {
       };
       const exists = await orderCollection.findOne(query);
       newOrder.orderStatus = "Pandding";
+
       if (exists) {
         return res.send({ success: false });
       } else {
