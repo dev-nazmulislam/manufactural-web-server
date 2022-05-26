@@ -145,7 +145,7 @@ async function run() {
       res.send(result);
     });
     // Load order data api
-    app.get("/order", async (req, res) => {
+    app.get("/orders", async (req, res) => {
       const query = {};
       const cursor = orderCollection.find(query);
       const result = await cursor.toArray();
@@ -153,7 +153,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/orders", async (req, res) => {
+    app.get("/order", async (req, res) => {
       const email = req.query.email;
       const status = req.query.status;
       let query;
