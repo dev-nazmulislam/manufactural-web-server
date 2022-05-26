@@ -46,26 +46,13 @@ async function run() {
       .db("manufacturer-data")
       .collection("comments");
 
-    // Payment Methood
-    // app.post("/create-payment-intent", async (req, res) => {
-    //   const service = req.body;
-    //   const price = service.price;
-    //   const amount = price * 100;
-    //   const paymentIntent = await stripe.paymentIntents.create({
-    //     amount: amount,
-    //     currency: "usd",
-    //     payment_method_types: ["card"],
-    //   });
-    //   res.send({ clientSecret: paymentIntent.client_secret });
-    // });
-
     // Get User data
-    app.get("/user", async (req, res) => {
+    app.get("/user", verifyJWT, async (req, res) => {
       const users = await userCollection.find().toArray();
       res.send(users);
     });
 
-    app.get("/admin/:email", async (req, res) => {
+    app.get("/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
       const isAdmin = user?.role === "Admin";
@@ -118,7 +105,7 @@ async function run() {
     });
 
     // Get product
-    app.get("/items", async (req, res) => {
+    app.get("/items", verifyJWT, async (req, res) => {
       const query = {};
       const cursor = partsCollection.find(query);
       const result = await cursor.toArray();
@@ -141,7 +128,7 @@ async function run() {
       res.send(result);
     });
     // Load order data api
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyJWT, async (req, res) => {
       const query = {};
       const cursor = orderCollection.find(query);
       const result = await cursor.toArray();
@@ -149,7 +136,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/order", async (req, res) => {
+    app.get("/order", verifyJWT, async (req, res) => {
       const email = req.query.email;
       const status = req.query.status;
       let query;
@@ -208,26 +195,6 @@ async function run() {
       const result = await orderCollection.deleteOne(query);
       res.send(result);
     });
-
-    // // Update Order data for payment
-    // app.patch("/orders/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const payment = req.body;
-    //   const filter = { _id: ObjectId(id) };
-    //   const updatedDoc = {
-    //     $set: {
-    //       paid: true,
-    //       transactionId: payment.transactionId,
-    //     },
-    //   };
-
-    //   const result = await paymentCollection.insertOne(payment);
-    //   const updatedBooking = await bookingCollection.updateOne(
-    //     filter,
-    //     updatedDoc
-    //   );
-    //   res.send(updatedBooking);
-    // });
 
     // Load reviews data api
     app.get("/reviews", async (req, res) => {
