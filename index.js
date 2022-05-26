@@ -42,9 +42,6 @@ async function run() {
     const partsCollection = client.db("manufacturer-data").collection("parts");
     const userCollection = client.db("manufacturer-data").collection("users");
     const orderCollection = client.db("manufacturer-data").collection("orders");
-    const paymentCollection = client
-      .db("manufacturer-data")
-      .collection("payments");
     const reviewCollection = client
       .db("manufacturer-data")
       .collection("comments");
@@ -78,7 +75,6 @@ async function run() {
     app.put("/user/admin/:email", async (req, res) => {
       const email = req.params.email;
       const role = req.query.role;
-      // return console.log(ro le);
       const filter = { email: email };
       if (role === "Admin") {
         const updateDoc = {
